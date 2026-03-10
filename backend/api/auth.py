@@ -17,7 +17,7 @@ async def register_user(user:UserCreate, session: Session = Depends(get_session)
     hash_password = create_password_hash(user.password)
     new_user = User(
         email=user.email,
-        password_hash=user.password
+        password_hash=hash_password
     )
 
     session.add(new_user)
