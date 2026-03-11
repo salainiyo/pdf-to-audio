@@ -8,11 +8,24 @@ from core.auth_dependancies import create_password_hash
 from core.rate_limiting import limiter
 from loguru import logger
 
+
+router = APIRouter()
 auth_router =  APIRouter(prefix="/auth")
+
+
+@router.get("/")
+@limiter.limit("5/minute")
+def health_check(request:Request):
+    logger.success("API RUNNING...")
+    return{
+        "status":"active",
+        "version":"0.0.1"
+    }
+
 
 @auth_router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-async def register_user(request: Request, user:UserCreate, session: Session = Depends(get_session)):
+def register_user(request: Request, user:UserCreate, session: Session = Depends(get_session)):
     statement = select(User).where(User.email == user.email)
     db_user = session.exec(statement).first()
     if db_user:
@@ -41,5 +54,3 @@ async def register_user(request: Request, user:UserCreate, session: Session = De
         logger.exception(f"{user.email} not registered. {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Internal server error")
-    
-    
