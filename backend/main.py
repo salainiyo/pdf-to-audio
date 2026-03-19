@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from loguru import logger
 import sys
 
-from api.auth import auth_router, router
+from backend.api.auth import auth_router, router
 
 logger.remove()
 app_logger = logger.add(sys.stdout, level="INFO", colorize=True, enqueue=True)

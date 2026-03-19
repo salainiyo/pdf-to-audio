@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import Session, create_engine
 
-from core.dependencies import check_null_env
+from backend.core.dependencies import check_null_env
 
 load_dotenv()
 DATABASE_URL = check_null_env(os.getenv("DATABASE_URL"))

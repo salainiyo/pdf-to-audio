@@ -2,10 +2,7 @@ import pytest
 from sqlmodel import create_engine, StaticPool, SQLModel, Session
 from fastapi.testclient import TestClient
 
-from main import app
-from database.db import get_session
-
-
+from backend.models.users import User
 
 database_url = "sqlite://"
 engine = create_engine(url=database_url, connect_args={"check_same_thread":False}, poolclass=StaticPool)
@@ -23,6 +20,8 @@ def client_fixture(session: Session):
     def session_overrides():
         return session
     
+    from backend.main import app
+    from backend.database.db import get_session
     app.dependency_overrides[get_session] = session_overrides
 
     if hasattr(app.state, "limiter"):

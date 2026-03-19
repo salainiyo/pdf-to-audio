@@ -1,12 +1,12 @@
 from fastapi import APIRouter, status, HTTPException, Depends, Request
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
-
-from database.db import get_session
-from models.users import User, UserCreate, UserRead
-from core.auth_dependancies import create_password_hash
-from core.rate_limiting import limiter
 from loguru import logger
+
+from backend.database.db import get_session
+from backend.models.users import User, UserCreate, UserRead
+from backend.core.auth_dependancies import create_password_hash
+from backend.core.rate_limiting import limiter
 
 
 router = APIRouter()
