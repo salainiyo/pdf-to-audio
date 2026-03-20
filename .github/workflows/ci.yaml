@@ -1,6 +1,5 @@
 name: PDF-TO-AUDIO BACKEND CI
 
-
 on:
   push:
     branches: [ "main" ]
@@ -10,13 +9,6 @@ on:
 jobs:
   test-code:
     runs-on: ubuntu-latest
-
-    env:
-      DATABASE_URL: "sqlite:///:memory:"
-      ALGORITHM: "HS256"
-      ACCESS_TOKEN_EXPIRATION: 60
-      REFRESH_TOKEN_EXPIRATION: 20
-      SECRET_KEY: "super-secret-test-key-for-ci-only"
     
     steps:
       - name: Check out repository code
@@ -33,8 +25,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-      - name: Run tests with pytest 
+      - name: Run tests with pytest
+        # Notice we removed the spaces before the colons and quoted the numbers
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
+          ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRATION: "60"
+          REFRESH_TOKEN_EXPIRATION: "20"
+          SECRET_KEY: "super-secret-test-key-for-ci-only"
         run: |
           cd backend
+          
+          # DEBUGGING: This prints the variables to your GitHub Actions log so you can verify they exist!
+          echo "Checking environment variables..."
+          echo "Database URL is: $DATABASE_URL"
+          echo "Secret Key is: $SECRET_KEY"
+          
+          # Run the actual tests
           pytest
-
