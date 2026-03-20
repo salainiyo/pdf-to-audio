@@ -4,7 +4,7 @@ from sqlmodel import Session, create_engine
 
 from backend.core.dependencies import check_null_env
 
-load_dotenv()
+load_dotenv(override=True)
 DATABASE_URL = check_null_env(os.getenv("DATABASE_URL"))
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread":False})
 

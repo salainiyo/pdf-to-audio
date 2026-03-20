@@ -8,7 +8,7 @@ from backend.core.dependencies import utc_now
 from backend.core.dependencies import check_null_env
 
 
-load_dotenv()
+load_dotenv(override=True)
 hash_password = PasswordHash.recommended()
 algorithm = check_null_env(os.getenv("ALGORITHM"))
 secret_key = check_null_env(os.getenv("SECRET_KEY"))

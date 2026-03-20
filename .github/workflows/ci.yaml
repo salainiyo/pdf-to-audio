@@ -26,7 +26,6 @@ jobs:
           pip install -r requirements.txt
           
       - name: Run tests with pytest
-        # Notice we removed the spaces before the colons and quoted the numbers
         env:
           DATABASE_URL: "sqlite:///:memory:"
           ALGORITHM: "HS256"
