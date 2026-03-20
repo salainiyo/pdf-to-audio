@@ -5,7 +5,7 @@ from loguru import logger
 
 from backend.database.db import get_session
 from backend.models.users import User, UserCreate, UserRead
-from backend.core.auth_dependancies import create_password_hash
+from backend.core.auth_dependancies import create_password_hash, check_password_hash
 from backend.core.rate_limiting import limiter
 
 
@@ -54,3 +54,14 @@ def register_user(request: Request, user:UserCreate, session: Session = Depends(
         logger.exception(f"{user.email} not registered. {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Internal server error")
+    
+@auth_router.post("/login")
+def login(request: Request,
+          user: UserCreate,
+          session: Session = Depends(get_session)):
+    statement = select(User).where(User.email == user.email)
+    db_user = session.exec(statement).first()
+    if not db_user or not check_password_hash(user.password, db_user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Invalid credentials")
+    
