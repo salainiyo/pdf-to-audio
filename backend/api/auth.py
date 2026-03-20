@@ -56,6 +56,7 @@ def register_user(request: Request, user:UserCreate, session: Session = Depends(
                             detail="Internal server error")
     
 @auth_router.post("/login")
+@limiter.limit("5/minute")
 def login(request: Request,
           user: UserCreate,
           session: Session = Depends(get_session)):
