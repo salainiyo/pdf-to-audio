@@ -29,3 +29,4 @@ class UserCreate(UserBase):
 class UserRead(SQLModel):
     id: int|None
     email: str
+    
