@@ -30,3 +30,15 @@ class UserRead(SQLModel):
     id: int|None
     email: str
     
+class AccessTokenCreate(SQLModel):
+    token: str = Field(index=True)
+    token_type: str = Field(index=True)
+
+class AccessTokenBlocklist(AccessTokenCreate, table=True):
+    id: int|None = Field(primary_key=True)
+
+class RefreshTokenCreate(AccessTokenCreate):
+    pass
+
+class RefreshTokenBlocklist(RefreshTokenCreate, table=True):
+    id: int|None = Field(primary_key=True)

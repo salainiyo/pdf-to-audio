@@ -2,16 +2,23 @@ from fastapi import APIRouter, status, HTTPException, Depends, Request
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 from loguru import logger
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 from backend.database.db import get_session
-from backend.models.users import User, UserCreate, UserRead
+from backend.models.users import (User, 
+                                  UserCreate, 
+                                  UserRead, 
+                                  AccessTokenBlocklist, 
+                                  AccessTokenCreate,
+                                  RefreshTokenBlocklist,
+                                  RefreshTokenCreate)
 from backend.core.auth_dependancies import create_password_hash, check_password_hash, create_access_token, create_refresh_token
 from backend.core.rate_limiting import limiter
 
 
 router = APIRouter()
 auth_router =  APIRouter(prefix="/auth")
+oauth_scheme = OAuth2PasswordBearer("/auth/login")
 
 
 @router.get("/")
@@ -79,3 +86,16 @@ def login(request: Request,
         }
     except Exception as e:
         logger.error(f"login failed for {form_data.username}, the error is {str(e)}")
+
+@auth_router.post("/logout")
+@limiter.limit("5/minute")
+def logout(request: Request,
+           token: str = Depends(oauth_scheme),
+           session: Session = Depends(get_session)):
+    access_block = AccessTokenCreate(token_type="access", token=token)
+    refresh_block = RefreshTokenCreate(token=token, token_type="refresh")
+
+    session.add(access_block)
+    session.add(refresh_block)
+    session.commit()
+    
