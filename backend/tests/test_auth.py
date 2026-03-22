@@ -38,6 +38,8 @@ class TestRegister:
 class TestLogin:
     login_payload = {"username":test_user.get("email"),
                           "password":test_user.get("password")}
+    wrong_password = {"username":test_user.get("email"), "password":str(test_user.get("password")).upper()}
+    wrong_email = {"username":"whatever@gmail.com", "password":test_user.get("password")}
     def test_successful_login(self, client):
         response = client.post("/auth/register", json=test_user)
         response = client.post("/auth/login", data=self.login_payload)
@@ -46,3 +48,18 @@ class TestLogin:
         assert "access_token" in data
         assert "refresh_token" in data
         assert "token_type" in data
+
+    def test_wrong_password(self, client):
+        response = client.post("/auth/register", json=test_user)
+        response = client.post("/auth/login", data=self.wrong_password)
+        data = response.json()
+        assert response.status_code == 401
+        assert data["detail"] == "Invalid credentials"
+
+    def test_wrong_email(self, client):
+        response = client.post("/auth/register", json=test_user)
+        response = client.post("/auth/login", data=self.wrong_password)
+        data = response.json()
+        assert response.status_code == 401
+        assert data["detail"] == "Invalid credentials"
+
