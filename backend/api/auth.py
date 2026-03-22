@@ -5,13 +5,8 @@ from loguru import logger
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 from backend.database.db import get_session
-from backend.models.users import (User, 
-                                  UserCreate, 
-                                  UserRead, 
-                                  AccessTokenBlocklist, 
-                                  AccessTokenCreate,
-                                  RefreshTokenBlocklist,
-                                  RefreshTokenCreate)
+from backend.core.auth_user import current_user
+from backend.models.users import (User, UserCreate, UserRead, AccessTokenBlocklist, RefreshTokenBlocklist)
 from backend.core.auth_dependancies import create_password_hash, check_password_hash, create_access_token, create_refresh_token
 from backend.core.rate_limiting import limiter
 
@@ -92,10 +87,17 @@ def login(request: Request,
 def logout(request: Request,
            token: str = Depends(oauth_scheme),
            session: Session = Depends(get_session)):
-    access_block = AccessTokenCreate(token_type="access", token=token)
-    refresh_block = RefreshTokenCreate(token=token, token_type="refresh")
+    access_block = AccessTokenBlocklist(token=token, token_type="access")
+    refresh_block = RefreshTokenBlocklist(token=token, token_type="refresh")
 
     session.add(access_block)
     session.add(refresh_block)
     session.commit()
+
+@auth_router.post("/me", response_model=UserRead)
+@limiter.limit("5/minute")
+def current_user_route(request: Request,
+                       actual_user: User = Depends(current_user),
+                       session: Session = Depends(get_session)):
+    return actual_user
     

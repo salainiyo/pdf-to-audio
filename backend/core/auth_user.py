@@ -24,8 +24,8 @@ def current_user(token:str = Depends(oauth_scheme), session:Session = Depends(ge
     try:
         payload = jwt.decode(jwt=token, key=secret_key, algorithms=algorithm)
         token_type: str|None = payload.get("type")
-        user_id: int|None = payload.get("user_id")
-        if not user_id or token_type != "access":
+        user_id: int|None = payload.get("sub")
+        if user_id is None or token_type != "access":
             logger.warning("Corrupted token")
             raise auth_exception
 

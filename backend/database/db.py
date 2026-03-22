@@ -1,11 +1,15 @@
 import os
 from dotenv import load_dotenv
 from sqlmodel import Session, create_engine
+from pathlib import Path
 
 from backend.core.dependencies import check_null_env
 
-load_dotenv(override=True)
-DATABASE_URL = check_null_env(os.getenv("DATABASE_URL"))
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+
+DB_PATH = BACKEND_DIR / "pdf_to_audio.db"
+
+DATABASE_URL = f"sqlite:///{DB_PATH}"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread":False})
 
 def get_session():
