@@ -44,6 +44,3 @@ def create_refresh_token(user_id: int):
                                expiration=timedelta(hours=refresh_token_expiration),
                                token_type="refresh")
 
-
-def current_user():
-    pass
