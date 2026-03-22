@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 from backend.database.db import get_session
 from backend.core.auth_user import current_user
-from backend.models.users import (User, UserCreate, UserRead, AccessTokenBlocklist, RefreshTokenBlocklist)
+from backend.models.users import *
 from backend.core.auth_dependancies import create_password_hash, check_password_hash, create_access_token, create_refresh_token
 from backend.core.rate_limiting import limiter
 
@@ -82,17 +82,19 @@ def login(request: Request,
     except Exception as e:
         logger.error(f"login failed for {form_data.username}, the error is {str(e)}")
 
-@auth_router.post("/logout")
+@auth_router.post("/logout", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 def logout(request: Request,
+           logout_data: LogoutRequest,
            token: str = Depends(oauth_scheme),
            session: Session = Depends(get_session)):
     access_block = AccessTokenBlocklist(token=token, token_type="access")
-    refresh_block = RefreshTokenBlocklist(token=token, token_type="refresh")
+    refresh_block = RefreshTokenBlocklist(token=logout_data.refresh_token, token_type="refresh")
 
     session.add(access_block)
     session.add(refresh_block)
     session.commit()
+    return {"message": "Successfully logged out"}
 
 @auth_router.post("/me", response_model=UserRead)
 @limiter.limit("5/minute")

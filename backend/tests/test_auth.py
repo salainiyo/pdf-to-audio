@@ -2,6 +2,8 @@ test_user = {
     "email":"testuser@gmail.com",
     "password":"Password@123"
 }
+login_payload = {"username":test_user.get("email"),
+                          "password":test_user.get("password")}
 
 class TestRegister:
     invalid_email_user = {
@@ -36,13 +38,11 @@ class TestRegister:
         assert response.status_code ==422
 
 class TestLogin:
-    login_payload = {"username":test_user.get("email"),
-                          "password":test_user.get("password")}
     wrong_password = {"username":test_user.get("email"), "password":str(test_user.get("password")).upper()}
     wrong_email = {"username":"whatever@gmail.com", "password":test_user.get("password")}
     def test_successful_login(self, client):
         response = client.post("/auth/register", json=test_user)
-        response = client.post("/auth/login", data=self.login_payload)
+        response = client.post("/auth/login", data=login_payload)
         data = response.json()
         assert response.status_code == 200
         assert "access_token" in data
@@ -62,4 +62,22 @@ class TestLogin:
         data = response.json()
         assert response.status_code == 401
         assert data["detail"] == "Invalid credentials"
+
+class TestLogout:
+    def test_successful_logout(self, client):
+        response = client.post("/auth/register", json=test_user)
+        response = client.post("/auth/login", data=login_payload)
+        tokens = response.json()
+        access_token = tokens["access_token"]
+        refresh_token = tokens["refresh_token"] 
+        headers = {
+            "Authorization": f"Bearer {access_token}"
+        }
+        payload = {
+            "refresh_token": refresh_token
+        }
+        
+        response = client.post("/auth/logout", headers=headers, json=payload)
+        assert response.status_code == 201
+
 

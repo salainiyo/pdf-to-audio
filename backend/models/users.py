@@ -29,6 +29,10 @@ class UserCreate(UserBase):
 class UserRead(SQLModel):
     id: int|None
     email: str
+
+class LogoutRequest(SQLModel):
+    refresh_token : str
+
     
 class AccessTokenBlocklist(SQLModel, table=True):
     id: int|None = Field(default=None, primary_key=True)
