@@ -90,11 +90,17 @@ def logout(request: Request,
            session: Session = Depends(get_session)):
     access_block = AccessTokenBlocklist(token=token, token_type="access")
     refresh_block = RefreshTokenBlocklist(token=logout_data.refresh_token, token_type="refresh")
-
-    session.add(access_block)
-    session.add(refresh_block)
-    session.commit()
-    return {"message": "Successfully logged out"}
+    
+    try:
+        session.add(access_block)
+        session.add(refresh_block)
+        session.commit()
+        logger.success("User successfully logged out")
+        return {"message": "Successfully logged out"}
+    except Exception as e:
+        logger.error(f"Error happened, {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Internal server error")
 
 @auth_router.post("/me", response_model=UserRead)
 @limiter.limit("5/minute")
