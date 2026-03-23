@@ -79,5 +79,43 @@ class TestLogout:
         
         response = client.post("/auth/logout", headers=headers, json=payload)
         assert response.status_code == 201
+    
+    def test_unsuccessful_logout(self, client):
+        response = client.post("/auth/register", json=test_user)
+        response = client.post("/auth/login", data=login_payload)
+        tokens = response.json()
+        access_token = tokens["access_token"]
+        refresh_token = tokens["refresh_token"] 
+        headers = {
+            "Authorization": f"Bearer {refresh_token}"
+        }
+        payload = {
+            "refresh_token": refresh_token
+        }
+        
+        response = client.post("/auth/logout", headers=headers, json=payload)
+        assert response.status_code == 401
+
+class TestRefresh:
+    def test_sucessful_refresh(self, client):
+        response = client.post("/auth/register", json=test_user)
+        response = client.post("/auth/login", data=login_payload)
+        access_token = response.json()["access_token"]
+        response = client.post("auth/refresh", headers={"Authorization":f"bearer {access_token}"})
+        data = response.json()
+        assert response.status_code == 200
+        assert "access_token" in data
+        assert "refresh_token" in data
 
 
+    def test_unsuccessful_refresh(self, client):
+        response = client.post("/auth/register", json=test_user)
+        response = client.post("/auth/login", data=login_payload)
+        refresh_token = response.json()["refresh_token"]
+        response = client.post("/auth/refresh", headers={"Authorization":f"bearer {refresh_token}"})
+        data = response.json()
+        assert "access_token" not in data
+        assert "refresh_token" not in data
+        assert response.status_code == 401
+
+        

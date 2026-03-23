@@ -1,6 +1,6 @@
 import re
 from sqlmodel import Field, SQLModel
-from pydantic import EmailStr, field_validator
+from pydantic import EmailStr, field_validator, BaseModel
 
 class UserBase(SQLModel):
     email:EmailStr = Field(unique=True, index=True)
@@ -30,7 +30,7 @@ class UserRead(SQLModel):
     id: int|None
     email: str
 
-class LogoutRequest(SQLModel):
+class LogoutRequest(BaseModel):
     refresh_token : str
 
     
@@ -44,3 +44,8 @@ class RefreshTokenBlocklist(SQLModel, table=True):
     id: int|None = Field(default=None, primary_key=True)
     token: str = Field(index=True)
     token_type: str = Field(index=True)
+
+class TokensRead(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "Bearer"

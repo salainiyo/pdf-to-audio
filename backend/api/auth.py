@@ -3,17 +3,40 @@ from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 from loguru import logger
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+import jwt
 
 from backend.database.db import get_session
 from backend.core.auth_user import current_user
 from backend.models.users import *
 from backend.core.auth_dependancies import create_password_hash, check_password_hash, create_access_token, create_refresh_token
 from backend.core.rate_limiting import limiter
+from backend.core.auth_dependancies import secret_key, algorithm
 
 
 router = APIRouter()
 auth_router =  APIRouter(prefix="/auth")
 oauth_scheme = OAuth2PasswordBearer("/auth/login")
+
+def token_checking(token: str, session:Session):
+    token_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                     detail="Invalid credentials",
+                                     headers={"WWW-Authenticate":"bearer"})
+    if not token:
+        raise token_exception
+    statement = select(AccessTokenBlocklist).where(AccessTokenBlocklist.token == token)
+    blocked_token = session.exec(statement).first()
+    if blocked_token is not None:
+        raise token_exception  
+    
+    
+    payload = jwt.decode(jwt=token, key=secret_key, algorithms=[algorithm])
+    user_id = payload.get("sub")
+    if not user_id or payload.get("type")!="access":
+        raise token_exception
+    db_user = session.get(User, int(user_id))
+    if not db_user:
+        raise token_exception
+    return db_user
 
 
 @router.get("/")
@@ -58,7 +81,7 @@ def register_user(request: Request, user:UserCreate, session: Session = Depends(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Internal server error")
     
-@auth_router.post("/login")
+@auth_router.post("/login", response_model=TokensRead)
 @limiter.limit("5/minute")
 def login(request: Request,
           form_data: OAuth2PasswordRequestForm = Depends(),
@@ -73,12 +96,10 @@ def login(request: Request,
     try:
         access_token = create_access_token(user_id=db_user.id)#type:ignore
         refresh_token = create_refresh_token(user_id=db_user.id)#type:ignore
+        tokens = TokensRead(access_token=access_token, refresh_token=refresh_token)
+
         logger.success(f"{form_data.username} logged in successfully")
-        return {
-            "access_token":access_token,
-            "refresh_token":refresh_token,
-            "token_type":"bearer"
-        }
+        return tokens
     except Exception as e:
         logger.error(f"login failed for {form_data.username}, the error is {str(e)}")
 
@@ -88,6 +109,7 @@ def logout(request: Request,
            logout_data: LogoutRequest,
            token: str = Depends(oauth_scheme),
            session: Session = Depends(get_session)):
+    token_checking(token=token, session=session)
     access_block = AccessTokenBlocklist(token=token, token_type="access")
     refresh_block = RefreshTokenBlocklist(token=logout_data.refresh_token, token_type="refresh")
     
@@ -108,4 +130,14 @@ def current_user_route(request: Request,
                        actual_user: User = Depends(current_user),
                        session: Session = Depends(get_session)):
     return actual_user
-    
+
+@auth_router.post("/refresh", response_model=TokensRead)
+@limiter.limit("5/minute")
+def refresh(request: Request,
+            token:str = Depends(oauth_scheme),
+            session:Session = Depends(get_session)):
+    db_user = token_checking(token=token, session=session)
+    access_token = create_access_token(user_id=db_user.id) #type:ignore
+    refresh_token = create_refresh_token(user_id=db_user.id) #type:ignore
+    tokens = TokensRead(access_token=access_token, refresh_token=refresh_token)
+    return tokens     
