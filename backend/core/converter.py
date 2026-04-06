@@ -17,6 +17,7 @@ def extract_text(pdf_path: str):
     return text
 
 def text_to_audio(text:str, output_path:str, language="en"):
+    """Takes a string of text and saves it as an MP3 file."""
     if not text:
         raise ValueError("No text provided")
     audio = gTTS(text=text, lang=language, slow=False)
