@@ -1,7 +1,7 @@
 import os
 import uuid
 from pathlib import Path
-from fastapi import APIRouter, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, File, Request, UploadFile, HTTPException, status
 from fastapi.responses import FileResponse
 from celery.result import AsyncResult
 
@@ -15,7 +15,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @convert_router.post("/convert")
 @limiter.limit("5/minute")
-async def convert_job(file: UploadFile = File(...)):
+async def convert_job(request: Request, file: UploadFile = File(...)):
     if not file:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File not found")
     
